@@ -9,11 +9,13 @@ Handle gH_LAW = INVALID_HANDLE;
 Handle gH_Return = INVALID_HANDLE;
 Handle gH_Sound = INVALID_HANDLE;
 Handle gH_SoundAll = INVALID_HANDLE;
+Handle gH_svFlash = INVALID_HANDLE;
 
 bool bLAW = true;
 bool bRtn = false;
 bool bSnd = false;
 bool bSndAll = true;
+bool bFlash = true;
 
 char zsSnd[255];
 
@@ -22,7 +24,7 @@ public Plugin myinfo =
 	name = "Flashlight",
 	author = "Mitch, Botox, maxime1907",
 	description = "Replaces +lookatweapon with a toggleable flashlight. Also adds the command: sm_flashlight",
-	version = "1.4.0",
+	version = "1.4.1",
 	url = "https://forums.alliedmods.net/showthread.php?t=227224"
 };
 
@@ -36,11 +38,15 @@ public void OnPluginStart()
 					"Sound path to use when a player uses the flash light.", FCVAR_NONE);
 	gH_SoundAll = CreateConVar("sm_flashlight_sound_all", "1", 
 					"Play the sound to all players, or just to the activator?", FCVAR_NONE);
+	gH_svFlash = FindConVar("mp_flashlight");
+
+	AddNormalSoundHook(OnSound);
 
 	HookConVarChange(gH_Sound, ConVarChanged);
 	HookConVarChange(gH_LAW, ConVarChanged);
 	HookConVarChange(gH_Return, ConVarChanged);
 	HookConVarChange(gH_SoundAll, ConVarChanged);
+	HookConVarChange(gH_svFlash, ConVarChanged);
 
 	UpdateSound();
 
@@ -52,27 +58,28 @@ public void OnPluginStart()
 
 public void ConVarChanged(Handle cvar, const char[] oldVal, const char[] newVal)
 {
-	if(cvar == gH_LAW)
+	if (cvar == gH_LAW)
 		bLAW = view_as<bool>(StringToInt(newVal));
-	if(cvar == gH_Return)
+	if (cvar == gH_Return)
 		bRtn = view_as<bool>(StringToInt(newVal));
 	if(cvar == gH_SoundAll)
 		bSndAll = view_as<bool>(StringToInt(newVal));
-	if(cvar == gH_Sound) {
+	if (cvar == gH_Sound)
 		UpdateSound();
-	}
+	if (cvar == gH_svFlash)
+		bFlash = view_as<bool>(StringToInt(newVal));
 }
 
 public void UpdateSound() {
 	char formatedSound[256];
 	GetConVarString(gH_Sound, formatedSound, sizeof(formatedSound));
-	if(StrEqual(formatedSound, "") || StrEqual(formatedSound, "0")) {
+	if (StrEqual(formatedSound, "") || StrEqual(formatedSound, "0")) {
 		bSnd = false;
 	} else {
 		strcopy(zsSnd, sizeof(zsSnd), formatedSound);
 		bSnd = true;
 		PrecacheSound(zsSnd);
-		if(!StrEqual(formatedSound, "items/flashlight1.wav")) {
+		if (!StrEqual(formatedSound, "items/flashlight1.wav")) {
 			Format(formatedSound, sizeof(formatedSound), "sound/%s", formatedSound);
 			AddFileToDownloadsTable(formatedSound);
 		}
@@ -80,20 +87,19 @@ public void UpdateSound() {
 }
 
 public void OnMapStart() {
-	if(bSnd) {
+	if (bSnd) {
 		PrecacheSound(zsSnd, true);
 	}
 }
 
-public Action Command_LAW(int client, const char[] command, int argc)
-{
-	if(!bLAW) //Enable this hook?
+public Action Command_LAW(int client, const char[] command, int argc) {
+	if (!bLAW) //Enable this hook?
 		return Plugin_Continue;
 
-	if(!IsClientInGame(client)) //If player is not in-game then ignore!
+	if (!IsClientInGame(client)) //If player is not in-game then ignore!
 		return Plugin_Continue;
 
-	if(!IsPlayerAlive(client)) //If player is not alive then continue the command.
+	if (!IsPlayerAlive(client)) //If player is not alive then continue the command.
 		return Plugin_Continue;	
 
 	ToggleFlashlight(client);
@@ -101,8 +107,7 @@ public Action Command_LAW(int client, const char[] command, int argc)
 	return (bRtn) ? Plugin_Continue : Plugin_Handled;
 }
 
-public Action Command_FlashLight(int client, int args)
-{
+public Action Command_FlashLight(int client, int args) {
 	if (IsClientInGame(client) && IsPlayerAlive(client)) {
 		ToggleFlashlight(client);
 	}
@@ -110,23 +115,31 @@ public Action Command_FlashLight(int client, int args)
 }
 
 stock void ToggleFlashlight(int client) {
+	if (!bFlash) {
+		return;
+	}
+
 	SetEntProp(client, Prop_Send, "m_fEffects", GetEntProp(client, Prop_Send, "m_fEffects") ^ 4);
-	if(bSnd) {
-		if(bSndAll) {
-			EmitSoundToAll(zsSnd, client);
-		} else {
-			EmitSoundToClient(client, zsSnd);
-		}
+	if(bSnd && !bSndAll) {
+		ClientCommand(client, "playgamesound %s", zsSnd);
 	}
 }
 
-public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2])
-{
+public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2]) {
 	// Dead flashlight
-	if (impulse == 100 && !IsPlayerAlive(client))
-	{
+	if (impulse == 0x64 && !IsPlayerAlive(client)) {
 		ToggleFlashlight(client);
 	}
 
 	return Plugin_Continue;
+}
+
+public Action OnSound(int clients[64], int &numClients, char sample[PLATFORM_MAX_PATH], int &entity, int &channel, float &volume, int &level, int &pitch, int &flags) {
+    if (bSnd && !bSndAll && entity >= 1 && entity <= MAXPLAYERS && StrEqual(sample, zsSnd, false)) {
+        numClients = 1;
+        clients[0] = entity;
+        return Plugin_Changed;
+    }
+
+    return Plugin_Continue;
 }

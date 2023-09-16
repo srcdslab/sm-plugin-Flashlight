@@ -120,14 +120,22 @@ stock void ToggleFlashlight(int client) {
 	}
 
 	SetEntProp(client, Prop_Send, "m_fEffects", GetEntProp(client, Prop_Send, "m_fEffects") ^ 4);
-	if(bSnd && !bSndAll) {
-		ClientCommand(client, "playgamesound %s", zsSnd);
+	if(bSnd) {
+		if(bSndAll) {
+			for (int x = 1; x <= MaxClients; x++) {
+				if (!IsClientInGame(x))
+					continue;
+				EmitSoundToClient(x, zsSnd, client, SNDCHAN_AUTO);
+			}
+		} else {
+			EmitSoundToClient(client, zsSnd, client, SNDCHAN_AUTO);
+		}
 	}
 }
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2]) {
 	// Dead flashlight
-	if (impulse == 0x64 && !IsPlayerAlive(client)) {
+	if (impulse == 100 && !IsPlayerAlive(client)) {
 		ToggleFlashlight(client);
 	}
 

@@ -24,7 +24,7 @@ public Plugin myinfo =
 	name = "Flashlight",
 	author = "Mitch, Botox, maxime1907",
 	description = "Replaces +lookatweapon with a toggleable flashlight. Also adds the command: sm_flashlight",
-	version = "1.4.1",
+	version = "1.4.2",
 	url = "https://forums.alliedmods.net/showthread.php?t=227224"
 };
 
@@ -135,7 +135,7 @@ stock void ToggleFlashlight(int client) {
 
 public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3], float angles[3], int &weapon, int &subtype, int &cmdnum, int &tickcount, int &seed, int mouse[2]) {
 	// Dead flashlight
-	if (impulse == 100 && !IsPlayerAlive(client)) {
+	if (impulse == 100 && IsClientInGame(client) && !IsPlayerAlive(client)) {
 		ToggleFlashlight(client);
 	}
 

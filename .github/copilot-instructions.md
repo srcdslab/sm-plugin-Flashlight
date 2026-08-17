@@ -22,38 +22,36 @@ addons/sourcemod/scripting/
 │   └── ci.yml                 # GitHub Actions CI/CD pipeline
 └── dependabot.yml             # Dependency management
 
-sourceknight.yaml              # Build configuration for sourceknight
 .gitignore                     # Git ignore rules
 ```
 
 ## Technical Environment
 
 - **Language**: SourcePawn
-- **Platform**: SourceMod 1.11.0+ (currently using 1.11.0-git6917)
-- **Compiler**: SourcePawn compiler via sourceknight build system
-- **Build Tool**: sourceknight (not standard spcomp)
+- **Platform**: SourceMod 1.12.x
+- **Compiler**: SourcePawn compiler (spcomp) via rumblefrog/setup-sp
+- **Build Tool**: native GitHub Actions workflow
 - **Target**: Source engine games (primarily CS:GO)
 
 ## Build System
 
-This project uses **sourceknight** as its build system, not the standard SourceMod compiler directly.
+This project uses a native GitHub Actions workflow (no external build tool).
 
 ### Build Configuration
-The build is configured in `sourceknight.yaml`:
-- Dependencies are automatically downloaded (SourceMod 1.11.0-git6917)
-- Output directory: `/addons/sourcemod/plugins`
+The build is configured in `.github/workflows/ci.yml`:
+- SourceMod compiler is installed via `rumblefrog/setup-sp` (version 1.12.x)
+- Output directory: `addons/sourcemod/plugins`
 - Target: `Flashlight` (produces `Flashlight.smx`)
 
 ### Local Development
 ```bash
-# Install sourceknight if not available
-# Build the plugin
-sourceknight build
+# Compile with spcomp directly
+spcomp -i include -o addons/sourcemod/plugins/Flashlight.smx addons/sourcemod/scripting/Flashlight.sp
 ```
 
 ### CI/CD Pipeline
 - Automated builds on push, PR, and manual dispatch
-- Uses `maxime1907/action-sourceknight@v1` action
+- Uses `rumblefrog/setup-sp` to install the SourcePawn compiler
 - Creates releases automatically from tags and main/master branch
 - Packages built plugins for distribution
 
@@ -171,9 +169,9 @@ Test on a Source engine server with:
 ## Debugging Common Issues
 
 ### Build Failures
-- Check sourceknight installation and version
-- Verify `sourceknight.yaml` configuration
-- Ensure SourceMod dependency is accessible
+- Check the GitHub Actions CI logs for spcomp errors
+- Verify `.github/workflows/ci.yml` configuration
+- Ensure required includes are accessible
 
 ### Runtime Issues
 - Use `sm plugins list` to verify plugin loaded
@@ -214,13 +212,12 @@ Test on a Source engine server with:
 
 ## Dependencies
 
-- **Required**: SourceMod 1.11.0+ 
+- **Required**: SourceMod 1.12.x
 - **Includes**: `sourcemod`, `sdktools`
 - **ConVars**: Depends on `mp_flashlight` server ConVar
-- **Build**: sourceknight build system
+- **Build**: native GitHub Actions workflow (spcomp via rumblefrog/setup-sp)
 
 ## Useful Resources
 
 - [SourceMod API Documentation](https://sm.alliedmods.net/new-api/)
 - [SourcePawn Language Reference](https://wiki.alliedmods.net/SourcePawn)
-- [sourceknight Documentation](https://github.com/maxime1907/sourceknight)

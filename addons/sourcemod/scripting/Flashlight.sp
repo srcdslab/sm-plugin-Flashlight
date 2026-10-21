@@ -5,11 +5,11 @@
 
 #pragma newdecls required
 
-Handle gH_LAW = INVALID_HANDLE;
-Handle gH_Return = INVALID_HANDLE;
-Handle gH_Sound = INVALID_HANDLE;
-Handle gH_SoundAll = INVALID_HANDLE;
-Handle gH_svFlash = INVALID_HANDLE;
+ConVar gH_LAW = null;
+ConVar gH_Return = null;
+ConVar gH_Sound = null;
+ConVar gH_SoundAll = null;
+ConVar gH_svFlash = null;
 
 bool bLAW = true;
 bool bRtn = false;
@@ -24,7 +24,7 @@ public Plugin myinfo =
 	name = "Flashlight",
 	author = "Mitch, Botox, maxime1907",
 	description = "Replaces +lookatweapon with a toggleable flashlight. Also adds the command: sm_flashlight",
-	version = "1.4.2",
+	version = "1.4.3",
 	url = "https://forums.alliedmods.net/showthread.php?t=227224"
 };
 
@@ -42,11 +42,11 @@ public void OnPluginStart()
 
 	AddNormalSoundHook(OnSound);
 
-	HookConVarChange(gH_Sound, ConVarChanged);
-	HookConVarChange(gH_LAW, ConVarChanged);
-	HookConVarChange(gH_Return, ConVarChanged);
-	HookConVarChange(gH_SoundAll, ConVarChanged);
-	HookConVarChange(gH_svFlash, ConVarChanged);
+	gH_Sound.AddChangeHook(ConVarChanged);
+	gH_LAW.AddChangeHook(ConVarChanged);
+	gH_Return.AddChangeHook(ConVarChanged);
+	gH_SoundAll.AddChangeHook(ConVarChanged);
+	gH_svFlash.AddChangeHook(ConVarChanged);
 
 	UpdateSound();
 
@@ -56,7 +56,7 @@ public void OnPluginStart()
 	AutoExecConfig(true);
 }
 
-public void ConVarChanged(Handle cvar, const char[] oldVal, const char[] newVal)
+public void ConVarChanged(ConVar cvar, const char[] oldVal, const char[] newVal)
 {
 	if (cvar == gH_LAW)
 		bLAW = view_as<bool>(StringToInt(newVal));
@@ -72,7 +72,7 @@ public void ConVarChanged(Handle cvar, const char[] oldVal, const char[] newVal)
 
 public void UpdateSound() {
 	char formatedSound[256];
-	GetConVarString(gH_Sound, formatedSound, sizeof(formatedSound));
+	gH_Sound.GetString(formatedSound, sizeof(formatedSound));
 	if (StrEqual(formatedSound, "") || StrEqual(formatedSound, "0")) {
 		bSnd = false;
 	} else {

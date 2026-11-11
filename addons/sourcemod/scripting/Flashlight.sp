@@ -24,7 +24,7 @@ public Plugin myinfo =
 	name = "Flashlight",
 	author = "Mitch, Botox, maxime1907",
 	description = "Replaces +lookatweapon with a toggleable flashlight. Also adds the command: sm_flashlight",
-	version = "1.4.3",
+	version = "1.4.4",
 	url = "https://forums.alliedmods.net/showthread.php?t=227224"
 };
 
